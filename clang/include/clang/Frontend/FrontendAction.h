@@ -227,14 +227,15 @@ public:
   ///
   /// \return True on success; on failure the compilation of this file should
   /// be aborted and neither Execute() nor EndSourceFile() should be called.
-  bool BeginSourceFile(CompilerInstance &CI, const FrontendInputFile &Input);
+  virtual bool BeginSourceFile(CompilerInstance &CI,
+                               const FrontendInputFile &Input);
 
   /// Set the source manager's main input file, and run the action.
   llvm::Error Execute();
 
   /// Perform any per-file post processing, deallocate per-file
   /// objects, and run statistics and output file cleanup code.
-  void EndSourceFile();
+  virtual void EndSourceFile();
 
   /// @}
 };
