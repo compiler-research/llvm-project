@@ -303,9 +303,9 @@ public:
 /// some existing action's behavior. It implements every virtual method in
 /// the FrontendAction interface by forwarding to the wrapped action.
 class WrapperFrontendAction : public FrontendAction {
+protected:
   std::unique_ptr<FrontendAction> WrappedAction;
 
-protected:
   bool PrepareToExecuteAction(CompilerInstance &CI) override;
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  StringRef InFile) override;

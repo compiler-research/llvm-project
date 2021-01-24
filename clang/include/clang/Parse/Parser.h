@@ -2394,12 +2394,13 @@ private:
   /// isDeclarationStatement - Disambiguates between a declaration or an
   /// expression statement, when parsing function bodies.
   /// Returns true for declaration, false for expression.
+public:
   bool isDeclarationStatement() {
     if (getLangOpts().CPlusPlus)
       return isCXXDeclarationStatement();
     return isDeclarationSpecifier(true);
   }
-
+private:
   /// isForInitDeclaration - Disambiguates between a declaration or an
   /// expression in the context of the C 'clause-1' or the C++
   // 'for-init-statement' part of a 'for' statement.

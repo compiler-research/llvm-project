@@ -216,8 +216,8 @@ private:
 
 public:
   IncrementalAction(CompilerInstance &CI)
-      : WrapperFrontendAction(CreateFrontendAction(CI)) {}
-
+    : WrapperFrontendAction(CreateFrontendAction(CI)) {}
+  FrontendAction *getWrapped() const { return WrappedAction.get(); }
   void ExecuteAction() override {
     CompilerInstance &CI = getCompilerInstance();
     assert(CI.hasPreprocessor() && "No PP!");
@@ -346,6 +346,12 @@ bool IncrementalParser::ParseOrWrapTopLevelDecl() {
   Consumer->HandleTranslationUnit(S.getASTContext());
 
   return CI->getDiagnostics().hasErrorOccurred();
+}
+
+CodeGenerator &IncrementalParser::getCodeGen() const {
+  IncrementalAction *IncrAct = static_cast<IncrementalAction*>(Act.get());
+  FrontendAction *WrappedAct = IncrAct->getWrapped();
+  return *static_cast<CodeGenAction*>(WrappedAct)->getCodeGenerator();
 }
 
 llvm::Expected<llvm::ArrayRef<DeclGroupRef>>

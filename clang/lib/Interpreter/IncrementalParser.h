@@ -23,6 +23,7 @@
 namespace clang {
 class ASTConsumer;
 class CompilerInstance;
+class CodeGenerator;
 class DeclGroupRef;
 class FrontendAction;
 class Parser;
@@ -54,7 +55,7 @@ public:
   ~IncrementalParser();
 
   const CompilerInstance *getCI() const { return CI.get(); }
-
+  CodeGenerator &getCodeGen() const;
   llvm::Expected<llvm::ArrayRef<DeclGroupRef>> Parse(llvm::StringRef Input);
 
 private:

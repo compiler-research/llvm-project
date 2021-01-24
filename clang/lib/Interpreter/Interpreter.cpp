@@ -13,7 +13,13 @@
 
 #include "clang/Interpreter/Interpreter.h"
 
+#include "clang/CodeGen/ModuleBuilder.h"
+#include "clang/Frontend/CompilerInstance.h"
+
+#include "llvm/IR/Module.h"
+
 #include "IncrementalParser.h"
+#include "IncrementalExecutor.h"
 
 using namespace clang;
 
@@ -31,13 +37,36 @@ Interpreter::~Interpreter() {}
 
 llvm::Error Interpreter::Initialize(std::vector<const char *> &ClangArgs) {
   IncrParser = std::make_unique<IncrementalParser>(ClangArgs);
+  llvm::Error Err = llvm::Error::success();
+  IncrExecutor = std::make_unique<IncrementalExecutor>(Err);
+  return Err;
 }
 
 const CompilerInstance *Interpreter::getCompilerInstance() const {
   return IncrParser->getCI();
 }
 
-llvm::Expected<llvm::ArrayRef<DeclGroupRef>>
-Interpreter::Process(llvm::StringRef Code) {
-  return IncrParser->Parse(Code);
+llvm::Expected<Transaction&> Interpreter::Process(llvm::StringRef Code) {
+  Transactions.emplace_back(Transaction());
+  Transaction &LastTransaction = Transactions.back();
+
+  auto ErrOrTransaction = IncrParser->Parse(Code);
+  if (auto Err = ErrOrTransaction.takeError())
+    return Err;
+
+  LastTransaction.Decls = *ErrOrTransaction;
+  CodeGenerator &CG = IncrParser->getCodeGen();
+  std::unique_ptr<llvm::Module> M(CG.ReleaseModule());
+  CG.StartModule("incr_module_" + std::to_string(Transactions.size()),
+                 M->getContext());
+
+  // FIXME: Add a callback to retain the llvm::Module once the JIT is done.
+  LastTransaction.TheModule = std::move(M);
+  if (auto Err = IncrExecutor->addModule(std::move(LastTransaction.TheModule)))
+    return Err;
+
+  if (auto Err = IncrExecutor->runCtors(Ctors))
+    return Err;
+
+  return LastTransaction;
 }

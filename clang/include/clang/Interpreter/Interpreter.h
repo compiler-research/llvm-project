@@ -20,22 +20,33 @@
 #include <memory>
 #include <vector>
 
+namespace llvm {
+class Module;
+}
+
 namespace clang {
 
 class CompilerInstance;
 class DeclGroupRef;
+class IncrementalExecutor;
 class IncrementalParser;
+struct Transaction {
+  llvm::ArrayRef<clang::DeclGroupRef> Decls;
+  std::unique_ptr<llvm::Module> TheModule;
+};
 
 /// Provides top-level interfaces for incremental compilation and execution.
 class Interpreter {
   std::unique_ptr<IncrementalParser> IncrParser;
+  std::unique_ptr<IncrementalExecutor> IncrExecutor;
+  std::vector<Transaction> Transactions;
 public:
   Interpreter();
   Interpreter(std::vector<const char *> &ClangArgs);
   ~Interpreter();
 
   const CompilerInstance *getCompilerInstance() const;
-  llvm::Expected<llvm::ArrayRef<DeclGroupRef>> Process(llvm::StringRef Code);
+  llvm::Expected<Transaction&> Process(llvm::StringRef Code);
 protected:
   llvm::Error Initialize(std::vector<const char *> &ClangArgs);
 };
