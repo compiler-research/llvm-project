@@ -24,92 +24,18 @@
 #include "llvm/Support/TargetSelect.h"
 
 namespace clang {
-using namespace llvm;
-using namespace llvm::orc;
-class SimpleJIT {
-private:
-  ExecutionSession ES;
-  std::unique_ptr<TargetMachine> TM;
-  const DataLayout DL;
-  MangleAndInterner Mangle{ES, DL};
-  JITDylib &MainJD{ES.createBareJITDylib("<main>")};
-  RTDyldObjectLinkingLayer ObjectLayer{ES, createMemMgr};
-  IRCompileLayer CompileLayer{ES, ObjectLayer,
-                              std::make_unique<SimpleCompiler>(*TM)};
-
-  static std::unique_ptr<SectionMemoryManager> createMemMgr() {
-    return std::make_unique<SectionMemoryManager>();
-  }
-
-  SimpleJIT(
-      std::unique_ptr<TargetMachine> TM, DataLayout DL,
-      std::unique_ptr<DynamicLibrarySearchGenerator> ProcessSymbolsGenerator)
-      : TM(std::move(TM)), DL(std::move(DL)) {
-    llvm::sys::DynamicLibrary::LoadLibraryPermanently(nullptr);
-    MainJD.addGenerator(std::move(ProcessSymbolsGenerator));
-  }
-
-public:
-  ~SimpleJIT() {
-    if (auto Err = ES.endSession())
-      ES.reportError(std::move(Err));
-  }
-
-  static Expected<std::unique_ptr<SimpleJIT>> Create() {
-    auto JTMB = JITTargetMachineBuilder::detectHost();
-    if (!JTMB)
-      return JTMB.takeError();
-
-    auto TM = JTMB->createTargetMachine();
-    if (!TM)
-      return TM.takeError();
-
-    auto DL = (*TM)->createDataLayout();
-
-    auto ProcessSymbolsGenerator =
-        DynamicLibrarySearchGenerator::GetForCurrentProcess(
-            DL.getGlobalPrefix());
-
-    if (!ProcessSymbolsGenerator)
-      return ProcessSymbolsGenerator.takeError();
-
-    return std::unique_ptr<SimpleJIT>(new SimpleJIT(
-        std::move(*TM), std::move(DL), std::move(*ProcessSymbolsGenerator)));
-  }
-
-  const TargetMachine &getTargetMachine() const { return *TM; }
-
-  Error addModule(ThreadSafeModule M) {
-    return CompileLayer.add(MainJD, std::move(M));
-  }
-
-  Expected<JITEvaluatedSymbol> findSymbol(const StringRef &Name) {
-    return ES.lookup({&MainJD}, Mangle(Name));
-  }
-
-  Expected<JITTargetAddress> getSymbolAddress(const StringRef &Name) {
-    auto Sym = findSymbol(Name);
-    if (!Sym)
-      return Sym.takeError();
-    return Sym->getAddress();
-  }
-
-  Error runCtorDtor(iterator_range<CtorDtorIterator> Tors) {
-    CtorDtorRunner R(MainJD);
-    R.add(Tors);
-    return R.run();
-  }
-};
 
 IncrementalExecutor::IncrementalExecutor(llvm::Error &Err) {
+  using namespace llvm::orc;
+  llvm::ErrorAsOutParameter EAO(&Err);
   auto JitOrErr = LLJITBuilder().create();
-  if (!JitOrErr) {
-    Err = std::move(JitOrErr.takeError());
+  if (auto Err2 = JitOrErr.takeError()) {
+    Err = std::move(Err2);
     return;
   }
 
   // Discover symbols from the process as a fallback.
-  const DataLayout &DL = (*JitOrErr)->getDataLayout();
+  const llvm::DataLayout &DL = (*JitOrErr)->getDataLayout();
   auto ProcessSymbolsGenerator =
     DynamicLibrarySearchGenerator::GetForCurrentProcess(DL.getGlobalPrefix());
 
@@ -127,8 +53,8 @@ IncrementalExecutor::IncrementalExecutor(llvm::Error &Err) {
 
 IncrementalExecutor::~IncrementalExecutor() { }
 
-Error IncrementalExecutor::addModule(std::unique_ptr<llvm::Module> M) {
-  ThreadSafeContext TSCtx(std::make_unique<LLVMContext>());
+llvm::Error IncrementalExecutor::addModule(std::unique_ptr<llvm::Module> M) {
+  llvm::orc::ThreadSafeContext TSCtx(std::make_unique<llvm::LLVMContext>());
   return Jit->addIRModule(llvm::orc::ThreadSafeModule(std::move(M), TSCtx));
 }
 
@@ -138,7 +64,7 @@ IncrementalExecutor::getSymbolAddress(llvm::StringRef Name) const {
   }*/
 
 llvm::Error
-IncrementalExecutor::runCtors(iterator_range<CtorDtorIterator> &Ctors) const {
+IncrementalExecutor::runCtors() const {
   return Jit->initialize(Jit->getMainJITDylib());
 }
 

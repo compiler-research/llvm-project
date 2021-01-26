@@ -11,7 +11,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "llvm/ADT/StringRef.h"
-#include "llvm/ExecutionEngine/JITSymbol.h"
 #include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
 
 #include <memory>
@@ -36,7 +35,7 @@ public:
   llvm::Error addModule(std::unique_ptr<llvm::Module> M);
   /*llvm::Expected<llvm::JITTargetAddress>
     getSymbolAddress(llvm::StringRef Name) const;*/
-  llvm::Error runCtors(llvm::iterator_range<CtorDtorIterator> &Ctors) const;
+  llvm::Error runCtors() const;
 };
 
 } // end namespace clang

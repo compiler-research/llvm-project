@@ -51,7 +51,7 @@ class IncrementalParser {
   std::vector<DeclGroupRef> TopLevelDecls;
 
 public:
-  IncrementalParser(std::vector<const char *> &ClangArgv);
+  IncrementalParser(std::unique_ptr<CompilerInstance> Instance);
   ~IncrementalParser();
 
   const CompilerInstance *getCI() const { return CI.get(); }

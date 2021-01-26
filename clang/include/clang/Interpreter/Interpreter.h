@@ -17,6 +17,7 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/Support/Error.h"
 
+#include <list>
 #include <memory>
 #include <vector>
 
@@ -35,20 +36,33 @@ struct Transaction {
   std::unique_ptr<llvm::Module> TheModule;
 };
 
+/// Create a pre-configured \c CompilerInstance for incremental processing.
+class IncrementalCompilerBuilder {
+public:
+  static llvm::Expected<std::unique_ptr<CompilerInstance>>
+  create(std::vector<const char *> &ClangArgv);
+};
+
 /// Provides top-level interfaces for incremental compilation and execution.
 class Interpreter {
   std::unique_ptr<IncrementalParser> IncrParser;
   std::unique_ptr<IncrementalExecutor> IncrExecutor;
-  std::vector<Transaction> Transactions;
-public:
-  Interpreter();
-  Interpreter(std::vector<const char *> &ClangArgs);
-  ~Interpreter();
+  std::list<Transaction> Transactions;
 
+  Interpreter(std::unique_ptr<CompilerInstance> CI, llvm::Error &Err);
+public:
+  ~Interpreter();
+  static llvm::Expected<std::unique_ptr<Interpreter>>
+  create(std::unique_ptr<CompilerInstance> CI);
   const CompilerInstance *getCompilerInstance() const;
-  llvm::Expected<Transaction&> Process(llvm::StringRef Code);
-protected:
-  llvm::Error Initialize(std::vector<const char *> &ClangArgs);
+  llvm::Expected<Transaction&> Parse(llvm::StringRef Code);
+  llvm::Error Execute(Transaction &T);
+  llvm::Error ParseAndExecute(llvm::StringRef Code) {
+    auto ErrOrTransaction = Parse(Code);
+    if (auto Err = ErrOrTransaction.takeError())
+      return Err;
+    return Execute(*ErrOrTransaction);
+  }
 };
 }
 
