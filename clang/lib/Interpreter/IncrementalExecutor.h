@@ -33,8 +33,6 @@ public:
   ~IncrementalExecutor();
 
   llvm::Error addModule(std::unique_ptr<llvm::Module> M);
-  /*llvm::Expected<llvm::JITTargetAddress>
-    getSymbolAddress(llvm::StringRef Name) const;*/
   llvm::Error runCtors() const;
 };
 

@@ -58,13 +58,7 @@ llvm::Error IncrementalExecutor::addModule(std::unique_ptr<llvm::Module> M) {
   return Jit->addIRModule(llvm::orc::ThreadSafeModule(std::move(M), TSCtx));
 }
 
-  /*Expected<JITTargetAddress>
-IncrementalExecutor::getSymbolAddress(llvm::StringRef Name) const {
-  return Jit->getSymbolAddress(Name);
-  }*/
-
-llvm::Error
-IncrementalExecutor::runCtors() const {
+llvm::Error IncrementalExecutor::runCtors() const {
   return Jit->initialize(Jit->getMainJITDylib());
 }
 
