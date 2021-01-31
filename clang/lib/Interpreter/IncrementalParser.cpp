@@ -105,8 +105,8 @@ bool IncrementalParser::ParseOrWrapTopLevelDecl() {
   // Recover resources if we crash before exiting this method.
   Sema &S = CI->getSema();
   llvm::CrashRecoveryContextCleanupRegistrar<Sema> CleanupSema(&S);
-  Sema::GlobalEagerInstantiationScope SavedPendingInstantiations(
-      S, /*Enabled*/ true);
+  Sema::GlobalEagerInstantiationScope GlobalInstantiations(S, /*Enabled*/ true);
+  Sema::LocalEagerInstantiationScope LocalInstantiations(S);
 
   // Skip previous eof due to last incremental input.
   if (P->getCurToken().is(tok::eof))
@@ -141,6 +141,9 @@ bool IncrementalParser::ParseOrWrapTopLevelDecl() {
     TopLevelDecls.push_back(DGR);
     Consumer->HandleTopLevelDecl(DGR);
   }
+
+  LocalInstantiations.perform();
+  GlobalInstantiations.perform();
 
   Consumer->HandleTranslationUnit(S.getASTContext());
 
