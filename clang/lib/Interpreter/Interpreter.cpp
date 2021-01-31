@@ -217,17 +217,19 @@ llvm::Expected<Transaction&> Interpreter::Parse(llvm::StringRef Code) {
     return Err;
 
   LastTransaction.Decls = *ErrOrTransaction;
-  CodeGenerator &CG = IncrParser->getCodeGen();
-  std::unique_ptr<llvm::Module> M(CG.ReleaseModule());
-  CG.StartModule("incr_module_" + std::to_string(Transactions.size()),
-                 M->getContext());
+  if (CodeGenerator *CG = IncrParser->getCodeGen()) {
+    std::unique_ptr<llvm::Module> M(CG->ReleaseModule());
+    CG->StartModule("incr_module_" + std::to_string(Transactions.size()),
+                    M->getContext());
 
-  LastTransaction.TheModule = std::move(M);
+    LastTransaction.TheModule = std::move(M);
+  }
 
   return LastTransaction;
 }
 
 llvm::Error Interpreter::Execute(Transaction &T) {
+  assert(T.TheModule);
   if (!IncrExecutor) {
     llvm::Error Err = llvm::Error::success();
     IncrExecutor = std::make_unique<IncrementalExecutor>(Err);

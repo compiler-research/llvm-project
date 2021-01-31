@@ -10,7 +10,7 @@ int TestVar = 12;
 
 void TestFunc() { ++TestVar; }
 // CHECK: Dumping TestFunc:
-// CHECK-NEXT: FunctionDecl {{.*}} TestFunc 'void (void)'
+// CHECK-NEXT: FunctionDecl {{.*}} TestFunc 'void ()'
 // CHECK-NEXT:   CompoundStmt{{.*}}
 // CHECK-NEXT:     UnaryOperator{{.*}} 'int' lvalue prefix '++'
 // CHECK-NEXT:       DeclRefExpr{{.*}} 'int' lvalue Var [[var_ptr]] 'TestVar' 'int'

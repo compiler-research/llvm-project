@@ -60,6 +60,16 @@ TEST(InterpreterTest, IncrementalInputTopLevelDecls) {
   EXPECT_EQ("var2", DeclToString(R2[0]));
 }
 
+
+TEST(InterpreterTest, Errors) {
+  std::unique_ptr<Interpreter> Interp = createInterpreter();
+  auto Err = Interp->Parse("intentional_error var1 = 42; }").takeError();
+  EXPECT_EQ("Parsing failed.", llvm::toString(std::move(Err)));
+
+  auto R2 = Interp->Parse("int var1 = 42;");
+  EXPECT_TRUE(!!R2);
+}
+
 // Here we test whether the user can mix declarations and statements. The
 // interpreter should be smart enough to recognize the declarations from the
 // statements and wrap the latter into a declaration, producing valid code.

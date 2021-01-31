@@ -61,7 +61,9 @@ public:
     auto ErrOrTransaction = Parse(Code);
     if (auto Err = ErrOrTransaction.takeError())
       return Err;
-    return Execute(*ErrOrTransaction);
+    if (ErrOrTransaction->TheModule)
+      return Execute(*ErrOrTransaction);
+    return llvm::Error::success();
   }
 };
 }

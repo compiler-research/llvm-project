@@ -55,7 +55,7 @@ public:
   ~IncrementalParser();
 
   const CompilerInstance *getCI() const { return CI.get(); }
-  CodeGenerator &getCodeGen() const;
+  CodeGenerator *getCodeGen() const;
   llvm::Expected<llvm::ArrayRef<DeclGroupRef>> Parse(llvm::StringRef Input);
 
 private:
