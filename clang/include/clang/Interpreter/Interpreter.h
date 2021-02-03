@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file defines the  the component which performs incremental code
+// This file defines the component which performs incremental code
 // compilation and execution.
 //
 //===----------------------------------------------------------------------===//
@@ -14,10 +14,10 @@
 #ifndef LLVM_CLANG_INTERPRETER_INTERPRETER_H
 #define LLVM_CLANG_INTERPRETER_INTERPRETER_H
 
-#include "llvm/ADT/ArrayRef.h"
+#include "clang/Interpreter/Transaction.h"
+
 #include "llvm/Support/Error.h"
 
-#include <list>
 #include <memory>
 #include <vector>
 
@@ -31,10 +31,6 @@ class CompilerInstance;
 class DeclGroupRef;
 class IncrementalExecutor;
 class IncrementalParser;
-struct Transaction {
-  llvm::ArrayRef<clang::DeclGroupRef> Decls;
-  std::unique_ptr<llvm::Module> TheModule;
-};
 
 /// Create a pre-configured \c CompilerInstance for incremental processing.
 class IncrementalCompilerBuilder {
@@ -47,7 +43,6 @@ public:
 class Interpreter {
   std::unique_ptr<IncrementalParser> IncrParser;
   std::unique_ptr<IncrementalExecutor> IncrExecutor;
-  std::list<Transaction> Transactions;
 
   Interpreter(std::unique_ptr<CompilerInstance> CI, llvm::Error &Err);
 public:

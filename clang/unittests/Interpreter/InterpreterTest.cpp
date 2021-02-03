@@ -63,11 +63,10 @@ TEST(InterpreterTest, IncrementalInputTopLevelDecls) {
 
 TEST(InterpreterTest, Errors) {
   std::unique_ptr<Interpreter> Interp = createInterpreter();
-  auto Err = Interp->Parse("intentional_error var1 = 42; }").takeError();
+  auto Err = Interp->Parse("intentional_error v1 = 42; ").takeError();
   EXPECT_EQ("Parsing failed.", llvm::toString(std::move(Err)));
 
-  auto R2 = Interp->Parse("int var1 = 42;");
-  EXPECT_TRUE(!!R2);
+  EXPECT_DEATH((void)Interp->Parse("int var1 = 42;"), "");
 }
 
 // Here we test whether the user can mix declarations and statements. The

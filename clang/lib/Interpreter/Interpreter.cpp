@@ -209,23 +209,7 @@ const CompilerInstance *Interpreter::getCompilerInstance() const {
 }
 
 llvm::Expected<Transaction&> Interpreter::Parse(llvm::StringRef Code) {
-  Transactions.emplace_back(Transaction());
-  Transaction &LastTransaction = Transactions.back();
-
-  auto ErrOrTransaction = IncrParser->Parse(Code);
-  if (auto Err = ErrOrTransaction.takeError())
-    return Err;
-
-  LastTransaction.Decls = *ErrOrTransaction;
-  if (CodeGenerator *CG = IncrParser->getCodeGen()) {
-    std::unique_ptr<llvm::Module> M(CG->ReleaseModule());
-    CG->StartModule("incr_module_" + std::to_string(Transactions.size()),
-                    M->getContext());
-
-    LastTransaction.TheModule = std::move(M);
-  }
-
-  return LastTransaction;
+  return IncrParser->Parse(Code);
 }
 
 llvm::Error Interpreter::Execute(Transaction &T) {

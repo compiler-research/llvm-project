@@ -13,12 +13,14 @@
 #ifndef LLVM_CLANG_INTERPRETER_INCREMENTALPARSER_H
 #define LLVM_CLANG_INTERPRETER_INCREMENTALPARSER_H
 
+#include "clang/Interpreter/Transaction.h"
+
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/Support/Error.h"
 
+#include <list>
 #include <memory>
-#include <vector>
 
 namespace clang {
 class ASTConsumer;
@@ -47,19 +49,19 @@ class IncrementalParser {
   /// Incremental input counter.
   unsigned InputCount = 0;
 
-  /// List containing every parsed top level decl.
-  std::vector<DeclGroupRef> TopLevelDecls;
+  /// List containing every information about every incrementally parsed piece
+  /// of code.
+  std::list<Transaction> Transactions;
 
 public:
   IncrementalParser(std::unique_ptr<CompilerInstance> Instance);
   ~IncrementalParser();
 
   const CompilerInstance *getCI() const { return CI.get(); }
-  CodeGenerator *getCodeGen() const;
-  llvm::Expected<llvm::ArrayRef<DeclGroupRef>> Parse(llvm::StringRef Input);
+  llvm::Expected<Transaction&> Parse(llvm::StringRef Input);
 
 private:
-  bool ParseOrWrapTopLevelDecl();
+  llvm::Expected<Transaction&> ParseOrWrapTopLevelDecl();
 };
 } // end namespace clang
 
